@@ -39,9 +39,11 @@ D_l_data <- tibble(Q = 0:500000)
 # predict_D_low <- predict(D_l, newdata = D_l_data)
 
 
-
 D_l_data <- D_l_data %>% 
   mutate(predict_D_low = (Q * D_l$coefficient[2]) + D_l$coefficient[1])
+
+ggplot(data = D_l_data, aes(x = Q, y = predict_D_low)) +
+  stat_smooth(method = "lm", color = "green")
 
 ggplot(data = demand_h_l, aes(x = Q_Low_Kwh, y = Price_Cents)) +
   geom_point() +
