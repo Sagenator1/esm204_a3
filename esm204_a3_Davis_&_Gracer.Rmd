@@ -7,6 +7,87 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(here)
+library(broom)
 ```
 
+
+```{r}
+demand_h_l <- read_csv(here("HW3_data.csv"))
+```
+
+
+## Estimate Demand Curves for "low" and "high" income consumers
+
+
+```{r}
+
+# Low Demand Curve
+
+D_l <- lm(Price_Cents ~ Q_Low_Kwh, data = demand_h_l)
+
+summary(D_l)
+
+D_l_tidy <- tidy(D_l)
+
+# dp_l <- D_l_tidy[2,2] + D_l_tidy[2,1]  # Need x from y = mx + b
+
+ggplot(data = demand_h_l, aes(x = Q_Low_Kwh, y = Price_Cents)) +
+  geom_point() +
+  stat_smooth(method = "lm", color = "red")
+
+
+# High Demand Curve
+
+D_h <- lm(Price_Cents ~ Q_High_Kwh, data = demand_h_l)
+
+summary(D_h)
+
+D_h_tidy <- tidy(D_h)
+
+ggplot(data = demand_h_l, aes(x = Q_High_Kwh, y = Price_Cents)) +
+  geom_point() +
+  stat_smooth(method = "lm", color = "blue")
+
+
+
+```
+
+#### • Initially, there is no tax on electricity consumption.
+#### • The current electricity price (without any taxes) is $.10 per kWh.
+#### • The MC of producing a kWh of electricity is linear and has a price-intercept of 0??
+
+#### While the Interagency Working Group develops a new SCC, the Biden Administration's "interim" value is $51 per metric ton of CO2.
+
+```{r}
+# Price of CO2 per lb, 1MT = 2204.62 lb,  $51 per MT of CO2
+
+mt_lb <- 2204.62    # Metric Ton (MT) in lbs
+
+P_lbco2 <- 51/mt_lb   # CO2 - price per lb ($/lb)
+
+```
+
+## 1. One kWh of electricity emits 0.85 pounds of CO2. Assuming that the interim SCC correctly reflects the total social cost of one metric ton of CO2, what is the marginal externality cost per kwH of electricity?
+
+```{r}
+# formula here?
+
+C_emit_per_kwh <- 0.85              # 1kWh = 0.85lb CO2, 0.85lb/kWh
+
+mec <- P_lbco2 * C_emit_per_kwh     #  $/kWh = $/lb * lb/kWh
+
+
+```
+
+### The MEC is $`r round(mec, 4)` per kWh.
+
+##  2. What is the aggregate monthly demand curve for electricity? What is the supply curve for electricity? What is the benefit" to consumers under the status quo? What is the benefit" to producers under the status quo? What is the environmental cost under the status quo?
+
+```{r}
+# need to solve for Q in terms of P and add together.  Tibble?  Need to get all lines on one graph by joining...
+
+```
 
