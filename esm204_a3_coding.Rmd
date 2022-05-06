@@ -42,6 +42,8 @@ D_l_data <- tibble(Q = 0:500000)
 D_l_data <- D_l_data %>% 
   mutate(predict_D_low = (Q * D_l$coefficient[2]) + D_l$coefficient[1])
 
+
+
 ggplot(data = D_l_data, aes(x = Q, y = predict_D_low)) +
   stat_smooth(method = "lm", color = "green")
 
@@ -62,7 +64,74 @@ ggplot(data = demand_h_l, aes(x = Q_High_Kwh, y = Price_Cents)) +
   geom_point() +
   stat_smooth(method = "lm", color = "blue")
 
+# P = mQ + b
+
+ml <- D_l$coefficient[2]  # slope of D_l
+bl <- D_l$coefficient[1]  # P int of D_l
+
+mh <- D_h$coefficient[2]
+bh <- D_h$coefficient[1] 
+
+# Ql = P/ml - bl/ml , Qh = P/mh - bh/mh
+# Qagg = P/ml + P/mh - bl/ml - bh/mh = P*(ml + mh)/(ml*mh) - (bl/ml + bh/mh) = Sagg * P - Qint for Q > Qh__k
+
+Sagg <- (ml + mh)/(ml*mh)
+Qint <- bl/ml + bh/mh
+
+# Q <- Sagg * Dagg - Qint
+
+# Dagg = P from above
+ 
+# Dagg <- (Q + Qint)/Sagg
+
+# MCS <- function(kWh_)
+
+Qh_k <- bl/mh - bh/mh  # to find kink in Dagg at D_l intercept (P = bl)
+
+# Dagg = D_h (0 < Q < Qh_k) + 
+# Dagg = magg*Q + Pint  (Qh_k < Q < 500000)
+
+data <- D_l_data %>% 
+  mutate(predict_D_high = (Q * D_h$coefficient[2]) + D_h$coefficient[1]) %>% 
+  mutate(predict_Dagg = (Q + Qint)/Sagg)
+
+Dagg2 = lm(predict_Dagg ~ Q, data)  #after Qh_k >= 158329
 
 
 ```
 
+
+```{r}
+# Price of CO2 per lb, 1MT = 2204.62 lb,  $51 per MT of CO2
+
+mt_lb <- 2204.62    # Metric Ton (MT) in lbs
+
+P_lbco2 <- 51/mt_lb   # CO2 - price per lb ($/lb)
+
+# formula here?
+
+C_emit_per_kwh <- 0.85              # 1kWh = 0.85lb CO2, 0.85lb/kWh
+
+mec <- P_lbco2 * C_emit_per_kwh     #  $/kWh = $/lb * lb/kWh
+
+P_e <- 0.10    # current cost in $
+
+#  S goes thru this and Dagg and origin using Qagg = Sagg * P - Qint.  Qagg is the run and P_e id the rise for m_s
+
+# Dagg2 = P_e where supply (mc) goes through it
+
+# Dagg22 = Q*Dagg2$coefficient[2] + Dagg2$coefficient[1]
+# Q = (Dagg2 - Dagg$coefficient[1])/Dagg2coefficient[2]
+
+Q_mc <- (P_e - Dagg2$coefficient[1])/(Dagg2$coefficient[2])
+
+data <- data %>% 
+  mutate (MC = (P_e/Q_mc) * Q)
+
+# Qagg <- Sagg * P_e - Qint
+
+#Cost <- function(P_lbco2) {
+ # msc <- 
+#}
+
+```
