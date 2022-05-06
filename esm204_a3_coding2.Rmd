@@ -1,0 +1,182 @@
+---
+title: "Coding2"
+author: "Sage Davis & Allison Gracer"
+date: "5/5/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(here)
+library(broom)
+```
+
+
+```{r}
+demand <- read_csv(here("HW3_data.csv"))
+```
+
+
+```{r}
+
+# Low Demand Curve
+
+DLP <- lm(Price_Cents ~ Q_Low_Kwh, data = demand) # Demand in terms of QL
+
+# DLQ <- lm(Q_Low_Kwh ~ Price_Cents, data = demand) # Demand in terms of PL
+
+# DL Q intercept, P = 0 = mQ + b, Q = b/-m
+
+DLQ_int <- DLP$coefficient[1] / (-DLP$coefficient[2]) 
+
+
+DL <- tibble(Q = 0:DLQ_int)
+
+
+
+DL <- DL %>% 
+  mutate(price = (Q * DLP$coefficient[2]) + DLP$coefficient[1])
+
+
+
+ggplot(data = DL, aes(x = Q, y = price)) +
+  geom_line(color = "green")
+
+ggplot(data = demand, aes(x = Q_Low_Kwh, y = Price_Cents)) +
+  geom_point() +
+  stat_smooth(method = "lm", color = "red")
+
+
+# High Demand Curve
+
+DHP <- lm(Price_Cents ~ Q_High_Kwh, data = demand)
+
+DHQ_int <- DHP$coefficient[1] / (-DHP$coefficient[2])
+
+DH <- tibble(Q = 0:DHQ_int)
+
+DH <- DH %>% 
+  mutate(price = (Q * DHP$coefficient[2]) + DHP$coefficient[1])
+
+
+ggplot(data = DH, aes(x = Q, y = price)) +
+  geom_line(color = "blue")
+
+# P = mQ + b
+
+ml <- DLP$coefficient[2]  # slope of DL
+bl <- DLP$coefficient[1]  # P int of DL
+
+mh <- DHP$coefficient[2]
+bh <- DHP$coefficient[1] 
+
+# P = mQ + b, Q = P/m - b/m
+# Ql = P/ml - bl/ml , Qh = P/mh - bh/mh
+# Q = P/ml + P/mh - bl/ml - bh/mh = P*(ml + mh)/(ml*mh) - (bl/ml + bh/mh) = Sagg * P - Qint for Q > Qh__k
+
+Sagg <- (ml + mh)/(ml*mh)
+Magg <- 1/Sagg             # Slope of Dagg
+Qint <- -(bl/ml + bh/mh)  # Neg?  Only works this way
+
+# P = DPH = mhQh_k + bh = bl, Qh_k = (bl-bh)/mh
+# find Qkink in Dagg at DLP intercept (P = bl)
+
+Qh_k <- (bl - bh)/mh  
+
+# Q <- Sagg * P - Qint
+
+# Dagg = P from above, P = (Q + Qint)/Sagg = (Magg)*(Q + Qint)
+ 
+# Dagg <- Magg*(Q + Qint)
+
+Dagg <- tibble(Q = round(Qh_k, 0):Qint)
+
+Dagg <- Dagg %>% 
+  mutate(price = Magg*(Q - Qint))
+
+# MCS <- function(kWh_)
+
+
+
+# Dagg = D_h (0 < Q < Qh_k) + 
+# Dagg = magg*Q + Pint  (Qh_k < Q < Qint)
+
+
+
+# Dagg2 = lm(Dagg ~ Q, data)  #after Qh_k >= 158329
+
+
+```
+
+
+```{r}
+# Price of CO2 per lb, 1MT = 2204.62 lb,  $51 per MT of CO2
+
+mt_lb <- 2204.62    # Metric Ton (MT) in lbs
+
+P_lbco2 <- 51/mt_lb   # CO2 - price per lb ($/lb)
+
+# formula here?
+
+C_emit_per_kwh <- 0.85  
+
+
+
+# 1kWh = 0.85lb CO2, 0.85lb/kWh
+
+mec <- P_lbco2 * C_emit_per_kwh     #  $/kWh = $/lb * lb/kWh
+
+
+
+
+P_e <- 0.10    # current cost in $
+
+#  S goes thru this and Dagg and origin using Qagg = Sagg * P + Qint.  Q_p_e is the run and P_e id the rise for MC
+
+Q_p_e <- Sagg*P_e + Qint
+
+m_MC <- P_e / Q_p_e  # Slope of Supply (MC)
+
+MC <- tibble(Q = 0:Qint) 
+
+MC <- MC %>% 
+  mutate (price = m_MC * Q)
+
+# Dagg2 = P_e where supply (mc) goes through it
+
+# Dagg22 = Q*Dagg2$coefficient[2] + Dagg2$coefficient[1]
+# Q = (Dagg2 - Dagg$coefficient[1])/Dagg2coefficient[2]
+
+# Q_mc <- (P_e - Dagg2$coefficient[1])/(Dagg2$coefficient[2])
+
+
+#data <- data %>% 
+ # mutate (price = (m_MC) * Q)
+
+# Qagg <- Sagg * P_e - Qint
+
+#Cost <- function(P_lbco2) {
+ # msc <- 
+#}
+
+```
+
+```{r}
+
+
+ # Join MC Data into one dataset for plotting
+
+join_data <- bind_rows('Low' = DL, 
+                       'High' = DH,
+                       'Aggregate' = Dagg,
+                       "MC(S)" = MC,
+                       .id = 'Curves')
+
+ggplot(data = join_data, aes(x = Q, 
+                             y = price, 
+                             color = Curves)) +
+  geom_line()
+```
+
