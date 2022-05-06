@@ -1,0 +1,54 @@
+---
+title: "Again"
+author: "Sage Davis & Allison Gracer"
+date: "5/5/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(here)
+library(broom)
+library(rootSolve)
+```
+
+```{r}
+df <- read_csv(here("HW3_data.csv"))
+```
+
+```{r}
+model_demand_l <- lm(Price_Cents ~ Q_Low_Kwh, data = df)
+model_demand_h <- lm(Price_Cents ~ Q_High_Kwh, data = df)
+
+ml <- model_demand_l$coefficient[2]  # slope of DL
+bl <- model_demand_l$coefficient[1]  # P int of DL
+
+mh <- model_demand_h$coefficient[2]
+bh <- model_demand_h$coefficient[1] 
+
+# P = mQ + b, Q = P/m - b/m
+# Ql = P/ml - bl/ml , Qh = P/mh - bh/mh
+# Qagg = P/ml + P/mh - bl/ml - bh/mh = P*(ml + mh)/(ml*mh) - (bl/ml + bh/mh) = Sagg * P - Qint for Q > Qh__k
+
+Sagg <- (ml + mh)/(ml*mh)
+Magg <- 1/Sagg             # Slope of Dagg
+Qint <- (bl/ml + bh/mh)  # Neg?  Only works this way
+
+#Qagg <- Sagg * p - Qint
+```
+```{r}
+p <- tibble (0:32)
+
+# define a function to get demand
+
+demand <- function(p, model){
+  q <- (p - model$coefficients[[1]])/model$coefficients[[2]]
+  q <- ifelse(q<0,0,q)
+  return(q)
+}
+
+DH <- demand(p, model_demand_h)
+```
+
